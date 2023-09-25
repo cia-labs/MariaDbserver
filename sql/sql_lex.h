@@ -1304,6 +1304,11 @@ public:
   List<Item> *save_insert_list;
   table_value_constr *tvc;
   bool in_tvc;
+  /*
+    original_names list. The latter are needed to restore the names of items
+    from item_list after each execution of the statement.
+  */
+  List<Lex_ident_sys> *original_names;
 
   /* The interface employed to execute the select query by a foreign engine */
   select_handler *select_h;
@@ -1381,6 +1386,7 @@ public:
                               bool straight_fl);
   TABLE_LIST *convert_right_join();
   List<Item>* get_item_list();
+  void replace_item_list_names(List<Lex_ident_sys> *replace_names);
   ulong get_table_join_options();
   void set_lock_for_tables(thr_lock_type lock_type, bool for_update);
   /*

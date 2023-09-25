@@ -2445,6 +2445,7 @@ void st_select_lex::init_query()
   in_tvc= false;
   versioned_tables= 0;
   pushdown_select= 0;
+  original_names= nullptr;
 }
 
 void st_select_lex::init_select()
@@ -2491,6 +2492,7 @@ void st_select_lex::init_select()
   in_tvc= false;
   versioned_tables= 0;
   is_tvc_wrapper= false;
+  original_names= nullptr;
 }
 
 /*
@@ -2972,6 +2974,27 @@ List<Item>* st_select_lex::get_item_list()
 {
   return &item_list;
 }
+
+
+/**
+  @brief
+    Replace the name of each item in the item_list of this SELECT_LEX
+*/
+
+void st_select_lex::replace_item_list_names(List<Lex_ident_sys> *replacement)
+{
+  DBUG_ASSERT(item_list.elements == replacement->elements);
+
+  List_iterator_fast<Lex_ident_sys> it(*replacement);
+  Lex_ident_sys *new_name;
+
+  List_iterator_fast<Item> li(item_list);
+  Item *item;
+
+  while ((item= li++) && (new_name= it++))
+    lex_string_set( &item->name, new_name->str);
+}
+
 
 ulong st_select_lex::get_table_join_options()
 {

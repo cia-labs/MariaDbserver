@@ -4047,4 +4047,31 @@ select b, rank() over (order by c) from v1 order by b;
 drop view v1;
 drop table t1;
 
+--echo #
+--echo # MDEV-31995 CTE column name specification inconsistency
+--echo #
+
+create table t1 (a int);
+insert into t1 values (3),(3),(3),(4),(4);
+
+let $q=
+with recursive cte (c1) as
+(select a  from t1 where t1.a=3
+  union select t1.a from cte,t1 where cte.c1+1=t1.a)
+select * from cte;
+
+eval $q;
+
+eval prepare st from "$q";
+execute st;
+execute st;
+drop prepare st;
+
+eval create procedure sp() $q;
+call sp();
+call sp();
+drop procedure sp;
+
+drop table t1;
+
 --echo # End of 10.4 tests

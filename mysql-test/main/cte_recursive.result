@@ -5848,4 +5848,43 @@ b	rank() over (order by c)
 -1	1
 drop view v1;
 drop table t1;
+#
+# MDEV-31995 CTE column name specification inconsistency
+#
+create table t1 (a int);
+insert into t1 values (3),(3),(3),(4),(4);
+with recursive cte (c1) as
+(select a  from t1 where t1.a=3
+union select t1.a from cte,t1 where cte.c1+1=t1.a)
+select * from cte;
+c1
+3
+4
+prepare st from "with recursive cte (c1) as
+(select a  from t1 where t1.a=3
+union select t1.a from cte,t1 where cte.c1+1=t1.a)
+select * from cte";
+execute st;
+c1
+3
+4
+execute st;
+c1
+3
+4
+drop prepare st;
+create procedure sp() with recursive cte (c1) as
+(select a  from t1 where t1.a=3
+union select t1.a from cte,t1 where cte.c1+1=t1.a)
+select * from cte;
+call sp();
+c1
+3
+4
+call sp();
+c1
+3
+4
+drop procedure sp;
+drop table t1;
 # End of 10.4 tests
