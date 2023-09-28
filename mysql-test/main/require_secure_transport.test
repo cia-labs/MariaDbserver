@@ -5,11 +5,16 @@ SET GLOBAL require_secure_transport=ON;
 --error ER_SECURE_TRANSPORT_REQUIRED
 connect without_ssl,localhost,root,,,,,TCP NOSSL;
 --enable_query_log
+
+connect with_ssl,localhost,root,,,,,TCP SSL;
+disconnect with_ssl;
+
 connection default;
 SET GLOBAL require_secure_transport=OFF;
 --disable_query_log
 connect without_ssl,localhost,root,,,,,TCP NOSSL;
 --enable_query_log
 disconnect without_ssl;
+
 connection default;
 DROP TABLE t1;

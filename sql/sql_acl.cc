@@ -14377,6 +14377,33 @@ static bool check_password_lifetime(THD *thd, const ACL_USER &acl_user)
   return false;
 }
 
+
+/**
+  Check that a client uses secure connection type in case the option
+  require_secure_transport is on.
+
+  @param thd                     thread handle
+
+  @return true in case the option require_secure_transport is on and the client
+          uses euther named pipe or unix socket or ssl, else return false
+*/
+
+static bool check_require_secured_transport(THD *thd)
+{
+  Vio *vio= thd->net.vio;
+  if (opt_require_secure_transport)
+  {
+    enum enum_vio_type type= vio_type(vio);
+
+    return
+      (type != VIO_TYPE_SSL) &&
+      (type != VIO_TYPE_NAMEDPIPE) &&
+      (type != VIO_TYPE_SOCKET);
+  }
+  return 0;
+}
+
+
 /**
   Perform the handshake, authorize the client and update thd sctx variables.
 
@@ -14519,6 +14546,22 @@ bool acl_authenticate(THD *thd, uint com_change_user_pkt_len)
 
   if (initialized) // if not --skip-grant-tables
   {
+    /*
+      Check whether the option require_secure_transport is on and in case
+      it is true that the secured connection type is used, that is either
+      unix socket or named pipe or ssl is in use.
+    */
+    if(check_require_secured_transport(thd))
+    {
+      Host_errors errors;
+      errors.m_ssl= 1;
+      inc_host_errors(mpvio.auth_info.thd->security_ctx->ip, &errors);
+      status_var_increment(thd->status_var.access_denied_errors);
+      my_error(ER_SECURE_TRANSPORT_REQUIRED, MYF(0));
+
+      DBUG_RETURN(1);
+    }
+
     /*
       OK. Let's check the SSL. Historically it was checked after the password,
       as an additional layer, not instead of the password

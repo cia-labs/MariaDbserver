@@ -1,6 +1,8 @@
 CREATE TABLE t1 (t int(1));
 SET GLOBAL require_secure_transport=ON;
-ERROR HY000: Connections using insecure transport are prohibited while --require_secure_transport=ON.
+ERROR 08004: Connections using insecure transport are prohibited while --require_secure_transport=ON.
+connect with_ssl,localhost,root,,,,,TCP SSL;
+disconnect with_ssl;
 connection default;
 SET GLOBAL require_secure_transport=OFF;
 disconnect without_ssl;
